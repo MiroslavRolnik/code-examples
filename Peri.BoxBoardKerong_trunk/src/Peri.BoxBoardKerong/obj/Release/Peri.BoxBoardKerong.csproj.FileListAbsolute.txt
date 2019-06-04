@@ -1,0 +1,11 @@
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\bin\Release\Peri.BoxBoardKerong.dll
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\bin\Release\Peri.BoxBoardKerong.pdb
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.csprojAssemblyReference.cache
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.BoxArrayImplementation.Implementation.Simulator.BoxControl.resources
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.BoxArrayImplementation.Implementation.Simulator.DriverForm.resources
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.BoxArrayImplementation.Implementation.Simulator.ModuleControl.resources
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.Implementation.Simulator.BoxSimulatorForm.resources
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.csproj.GenerateResource.cache
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.csproj.CoreCompileInputs.cache
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.dll
+r:\Projects\Payment4U\Peri.BoxBoardKerong_trunk\src\Peri.BoxBoardKerong\obj\Release\Peri.BoxBoardKerong.pdb
