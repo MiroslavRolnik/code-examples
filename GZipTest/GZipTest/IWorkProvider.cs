@@ -9,5 +9,6 @@ namespace GZipTest
 	interface IWorkProvider
 	{
 		Action GetWork();
+		void StopWork();
 	}
 }

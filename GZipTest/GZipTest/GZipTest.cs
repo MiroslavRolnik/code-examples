@@ -15,7 +15,7 @@ namespace GZipTest
 		{
 			CheckArguments(inputStream, outputStream, chunkLength, workThreadCount);
 			
-			using (var chunkReader = new ChunkQueue(inputStream, workThreadCount, chunkLength))//new ChunkToCompressReader(inputStream, chunkLength);
+			using (var chunkReader = new ChunkQueue(new ChunkToCompressReader(inputStream, chunkLength) , workThreadCount))
 			using (var chunkWriter = new ComressedChunkWriter(outputStream))
 			{
 				IWorkProvider workProvider = new GZipTestCompress(chunkReader, chunkWriter);
@@ -28,7 +28,7 @@ namespace GZipTest
 		{
 			CheckArguments(inputStream, outputStream, chunkLength, workThreadCount);
 			
-			using (var chunkReader = new ChunkToDecompressReader(inputStream))
+			using (var chunkReader = new ChunkToDecompressReader(inputStream))// new ChunkQueue(new ChunkToDecompressReader(inputStream),workThreadCount)
 			using (var chunkWriter = new ChunkWriter(outputStream))
 			{
 				IWorkProvider workProvider = new GZipTestDecompress(chunkReader, chunkWriter);
@@ -57,7 +57,7 @@ namespace GZipTest
 		{
 			IWorkDoer workDoer = new WorkDoer(workThreadCount);
 
-			workDoer.DoWork(workProvider.GetWork());
+			workDoer.DoWork(workProvider);
 		}
 
 	}

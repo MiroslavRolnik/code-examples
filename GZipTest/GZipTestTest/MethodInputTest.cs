@@ -72,8 +72,8 @@ namespace GZipTestTest
 		[TestMethod]
 		public void TestDecompress()
 		{
-			string origFile = nameof(TestCompress) + ".orig";
-			string archFile = nameof(TestCompress) + ".arch";
+			string origFile = nameof(TestDecompress) + ".orig";
+			string archFile = nameof(TestDecompress) + ".arch";
 			string decomFile = "_" + origFile;
 
 			if (!FileExists(origFile))
@@ -89,8 +89,8 @@ namespace GZipTestTest
 		[TestMethod]
 		public void TestInputFileAlreadyOpen()
 		{
-			string origFile = nameof(TestCompress) + ".orig";
-			string archFile = nameof(TestCompress) + ".arch";
+			string origFile = nameof(TestInputFileAlreadyOpen) + ".orig";
+			string archFile = nameof(TestInputFileAlreadyOpen) + ".arch";
 			string decomFile = "_" + origFile;
 
 			if (!FileExists(origFile))
@@ -105,8 +105,8 @@ namespace GZipTestTest
 		[TestMethod]
 		public void TestOutputFileAlreadyOpen()
 		{
-			string origFile = nameof(TestCompress) + ".orig";
-			string archFile = nameof(TestCompress) + ".arch";
+			string origFile = nameof(TestOutputFileAlreadyOpen) + ".orig";
+			string archFile = nameof(TestOutputFileAlreadyOpen) + ".arch";
 			string decomFile = "_" + origFile;
 
 			if (!FileExists(origFile))
@@ -134,11 +134,12 @@ namespace GZipTestTest
 
 			byte[] file = File.ReadAllBytes(archFile);
 
-			file[0] = 0;
+			file[0] = (byte)((file[0]+1)%256);
 
 			File.WriteAllBytes(archFile, file);
 
-			Assert.ThrowsException<Exception>(() => GZipTest.Program.TestMain(new string[] { "decompress", archFile, decomFile }));
+			Assert.ThrowsException<Exception>(() => GZipTest.Program.TestMain(new string[] { "decompress", archFile, decomFile }),
+				"Hash code error in chunk 0!");
 		}
 
 		bool AreEqual(byte[] first, byte[] second)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,22 +10,35 @@ namespace GZipTest
 {	
 	internal class ChunkToDecompressReader : ChunkReaderBase, IChunkReader
 	{
+		private HashAlgorithm hashAlgorithm = new MD5Cng();
+
 		public int ReadChunk(out byte[] buffer, out int chunkIndex)
 		{
+			buffer = new byte[0];
+
 			lock (InnerStream)
 			{
-				buffer = new byte[4];
+				int hashLength = hashAlgorithm.HashSize / 8;
+				int headerLength = 4 + hashLength;
 
-				int readLength = InnerStream.Read(buffer, 0, 4);
+				byte[] headerBuffer = new byte[headerLength];
+				
+				int readLength = InnerStream.Read(headerBuffer, 0, headerLength);
 
-				if (readLength == 4)
+				if (readLength == headerLength)
 				{
-					int chunkLength = BitConverter.ToInt32(buffer, 0);
+					int chunkLength = BitConverter.ToInt32(headerBuffer, 0);
 
-					if (buffer.Length < chunkLength)
-						buffer = new byte[chunkLength];
+					buffer = new byte[chunkLength];
 
-					return Read(buffer, 0, chunkLength, out chunkIndex);
+					int read = Read(buffer, 0, chunkLength, out chunkIndex);
+
+					byte[] hash = hashAlgorithm.ComputeHash(buffer);
+
+					if (read != chunkLength || !hash.IsEqual(headerBuffer, 4))
+						throw new Exception($"Hash code error in chunk {chunkIndex}!");
+
+					return read;
 				}
 				else if (readLength == 0)
 				{

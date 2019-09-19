@@ -14,6 +14,8 @@ namespace GZipTest
 
 		private IChunkWriter _ChunkWriter;
 
+		private volatile bool _StopWork;
+
 		public GZipTestCompress(IChunkReader chunkReader, IChunkWriter chunkWriter)
 		{
 			_ChunkReader = chunkReader ?? throw new ArgumentNullException(nameof(chunkReader));
@@ -27,7 +29,7 @@ namespace GZipTest
 			byte[] buffer;
 
 			int readLength = 0;
-			while ((readLength = _ChunkReader.ReadChunk(out buffer, out chunkIndex)) > 0)
+			while (!_StopWork && (readLength = _ChunkReader.ReadChunk(out buffer, out chunkIndex)) > 0)
 			{
 				byte[] compressed = null;
 				using (MemoryStream ms = new MemoryStream())
@@ -45,5 +47,10 @@ namespace GZipTest
 		}
 
 		public Action GetWork() => CompressWork;
+
+		public void StopWork()
+		{
+			_StopWork = true;
+		}
 	}
 }

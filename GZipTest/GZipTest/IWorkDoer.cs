@@ -8,6 +8,6 @@ namespace GZipTest
 {
 	internal interface IWorkDoer
 	{
-		void DoWork(Action work);
+		void DoWork(IWorkProvider workProvider);
 	}
 }

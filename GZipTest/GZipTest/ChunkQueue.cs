@@ -8,10 +8,11 @@ using System.Threading.Tasks;
 
 namespace GZipTest
 {
-	internal class ChunkQueue : ChunkReaderBase, IChunkReader
+	internal class ChunkQueue : IChunkReader
 	{
 		private readonly int _QueueLength;
-		private readonly int _ChunkLength;
+
+		public IChunkReader ChunkReader { get; private set; }
 
 		private Thread _WorkThread;
 
@@ -43,6 +44,9 @@ namespace GZipTest
 					{
 						Chunk chunk = _ChunkQueue.Dequeue();
 
+						if (chunk.Exception != null)
+							throw chunk.Exception;
+
 						buffer = chunk.Buffer;
 						chunkIndex = chunk.Index;
 						length = chunk.Length;
@@ -61,8 +65,8 @@ namespace GZipTest
 
 		private void FillQueue()
 		{
-			int read = _ChunkLength;
-
+			int read;
+			byte[] buffer;
 			while (!_IsEndOfStream)
 			{
 				_WaitForRemoveEvent.Wait(500);
@@ -76,17 +80,27 @@ namespace GZipTest
 					}
 				}
 
-				byte[] buffer = new byte[_ChunkLength];
 				int chunkIndex;
 
-				read = Read(buffer, 0, _ChunkLength, out chunkIndex);
+				Exception exception = null;
+				try
+				{
+					read = ChunkReader.ReadChunk(out buffer, out chunkIndex);
+				}
+				catch (Exception ex)
+				{
+					exception = ex;
+					buffer = null;
+					chunkIndex = -1;
+					read = 0;
+				}
 
 				_IsEndOfStream = (read == 0);
 
 				if (!_IsEndOfStream)
 					lock (_ChunkQueue)
 					{
-						_ChunkQueue.Enqueue(new Chunk() { Buffer = buffer, Index = chunkIndex, Length = read });
+						_ChunkQueue.Enqueue(new Chunk() { Buffer = buffer, Index = chunkIndex, Length = read, Exception = exception });
 					}
 
 				_WaitForAddEvent.Set();
@@ -110,17 +124,17 @@ namespace GZipTest
 			_WorkThread = null;
 		}
 
-		public ChunkQueue(Stream stream, int queueLength, int chunkLength) : base(stream)
+		public ChunkQueue(IChunkReader chunkReader, int queueLength)
 		{
 			_QueueLength = queueLength;
-			_ChunkLength = chunkLength;
+			ChunkReader = chunkReader;
 			_WaitForAddEvent = new ManualResetEventSlim(false);
 			_WaitForRemoveEvent = new ManualResetEventSlim(true);
 		}
 
 		private bool disposedValue = false;
 
-		protected override void Dispose(bool disposing)
+		protected virtual void Dispose(bool disposing)
 		{
 			if (!disposedValue)
 			{
@@ -128,13 +142,17 @@ namespace GZipTest
 				{
 					FinishFillQueue();
 
-					InnerStream?.Dispose();
+					ChunkReader?.Dispose();
+					ChunkReader = null;
 				}
 
 				disposedValue = true;
 			}
+		}
 
-			base.Dispose(disposing);
+		public void Dispose()
+		{
+			Dispose(true);
 		}
 
 		class Chunk
@@ -142,6 +160,7 @@ namespace GZipTest
 			public byte[] Buffer;
 			public int Index;
 			public int Length;
+			public Exception Exception;
 		}
 	}
 }

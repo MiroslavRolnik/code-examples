@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ByteArrayExtension.cs" />
     <Compile Include="ChunkBase.cs" />
     <Compile Include="ChunkQueue.cs" />
     <Compile Include="ChunkReader.cs" />

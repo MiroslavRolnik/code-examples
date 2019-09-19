@@ -15,15 +15,13 @@ namespace GZipTest
 
 		private volatile Exception _Exception;
 
-		private object _ExceptionLock = new object();
-
-		public void DoWork(Action action)
+		public void DoWork(IWorkProvider workProvider)
 		{
 			_Threads = new Thread[_WorkThreadsCount];
 
 			for (int i = 0; i < _WorkThreadsCount; i++)
 			{
-				Thread workThread = new Thread(() => DoWorkOnThread(action));
+				Thread workThread = new Thread(() => DoWorkOnThread(workProvider));
 				workThread.IsBackground = true;
 				workThread.Name = $"WorkDoer#{i}";
 				workThread.Start();
@@ -38,26 +36,18 @@ namespace GZipTest
 				throw _Exception;
 		}
 
-		private void DoWorkOnThread(Action action)
+		private void DoWorkOnThread(IWorkProvider workProvider)
 		{
 			try
 			{
-				action();
+				Action work = workProvider.GetWork();
+				work();
 			}
 			catch (Exception ex)
 			{
-				bool hasBeenAlreadyThrown = false;
+				Interlocked.CompareExchange<Exception>(ref _Exception, ex, null);
 
-				lock (_ExceptionLock)
-				{
-					hasBeenAlreadyThrown = _Exception != null;
-					_Exception = hasBeenAlreadyThrown ? _Exception : ex;
-				}
-
-				if (!hasBeenAlreadyThrown)
-					foreach (Thread thread in _Threads)
-						if (thread != Thread.CurrentThread && thread.IsAlive)
-							thread.Abort();
+				workProvider.StopWork();
 			}
 		}
 
