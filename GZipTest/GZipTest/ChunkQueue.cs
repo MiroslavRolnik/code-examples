@@ -8,26 +8,29 @@ using System.Threading.Tasks;
 
 namespace GZipTest
 {
-	internal class ChunkQueue : IChunkReader
+	internal class ChunkQueue : IChunkReader, IWorkProvider
 	{
 		private readonly int _QueueLength;
+		private IWorkDoer _WorkDoer;
 
 		public IChunkReader ChunkReader { get; private set; }
 
-		private Thread _WorkThread;
-
 		private readonly ManualResetEventSlim _WaitForAddEvent;
-		private readonly ManualResetEventSlim _WaitForRemoveEvent;
+
+		private readonly SemaphoreSlim _Semaphore;
 
 		private int _IsRunning = 0;
+
 		private volatile bool _IsEndOfStream;
+		private volatile bool _IsException;
+		private volatile bool _IsStopped;
 
 		private Queue<Chunk> _ChunkQueue = new Queue<Chunk>();
 
 		public int ReadChunk(out byte[] buffer, out int chunkIndex)
 		{
 			if (Interlocked.CompareExchange(ref _IsRunning, 1, 0) == 0)
-				Run();
+				_WorkDoer.DoWork(this);
 
 			int length = -1;
 
@@ -51,9 +54,9 @@ namespace GZipTest
 						chunkIndex = chunk.Index;
 						length = chunk.Length;
 
-						_WaitForRemoveEvent.Set();
+						_Semaphore.Release();
 					}
-					else if (_IsEndOfStream)
+					else if (_IsEndOfStream || _IsException || _IsStopped)
 						length = 0;
 					else
 						_WaitForAddEvent.Reset();
@@ -67,69 +70,46 @@ namespace GZipTest
 		{
 			int read;
 			byte[] buffer;
-			while (!_IsEndOfStream)
+			while (!_IsEndOfStream && !_IsException && !_IsStopped)
 			{
-				_WaitForRemoveEvent.Wait(500);
-
-				lock (_ChunkQueue)
+				if (_Semaphore.Wait(500))
 				{
-					if (_ChunkQueue.Count == _QueueLength)
+					int chunkIndex;
+
+					Exception exception = null;
+					try
 					{
-						_WaitForRemoveEvent.Reset();
-						continue;
+						read = ChunkReader.ReadChunk(out buffer, out chunkIndex);
 					}
-				}
-
-				int chunkIndex;
-
-				Exception exception = null;
-				try
-				{
-					read = ChunkReader.ReadChunk(out buffer, out chunkIndex);
-				}
-				catch (Exception ex)
-				{
-					exception = ex;
-					buffer = null;
-					chunkIndex = -1;
-					read = 0;
-				}
-
-				_IsEndOfStream = (read == 0);
-
-				if (!_IsEndOfStream)
-					lock (_ChunkQueue)
+					catch (Exception ex)
 					{
-						_ChunkQueue.Enqueue(new Chunk() { Buffer = buffer, Index = chunkIndex, Length = read, Exception = exception });
+						_IsException = true;
+
+						exception = ex;
+						buffer = null;
+						chunkIndex = -1;
+						read = 0;
 					}
 
-				_WaitForAddEvent.Set();
+					_IsEndOfStream = (read == 0);
+
+					if (!_IsEndOfStream)
+						lock (_ChunkQueue)
+						{
+							_ChunkQueue.Enqueue(new Chunk() { Buffer = buffer, Index = chunkIndex, Length = read, Exception = exception });
+							_WaitForAddEvent.Set();
+						}
+				}
 			}
 		}
 
-		public void Run()
+		public ChunkQueue(IChunkReader chunkReader, IWorkDoer workDoer, int queueLength)
 		{
-			_WorkThread = new Thread(FillQueue);
-			_WorkThread.Name = "ReadThread";
-			_WorkThread.IsBackground = true;
-
-			_WorkThread.Start();
-		}
-
-		public void FinishFillQueue()
-		{
-			_IsEndOfStream = true;
-			_WaitForRemoveEvent.Set();
-			_WorkThread?.Join();
-			_WorkThread = null;
-		}
-
-		public ChunkQueue(IChunkReader chunkReader, int queueLength)
-		{
-			_QueueLength = queueLength;
 			ChunkReader = chunkReader;
+			_QueueLength = queueLength;
+			_WorkDoer = workDoer;
 			_WaitForAddEvent = new ManualResetEventSlim(false);
-			_WaitForRemoveEvent = new ManualResetEventSlim(true);
+			_Semaphore = new SemaphoreSlim(workDoer.ThreadCount, workDoer.ThreadCount);
 		}
 
 		private bool disposedValue = false;
@@ -140,7 +120,12 @@ namespace GZipTest
 			{
 				if (disposing)
 				{
-					FinishFillQueue();
+					_WorkDoer.Stop();
+					_WorkDoer.WaitToEnd();
+
+					_WaitForAddEvent?.Dispose();
+
+					_Semaphore?.Dispose();
 
 					ChunkReader?.Dispose();
 					ChunkReader = null;
@@ -153,6 +138,13 @@ namespace GZipTest
 		public void Dispose()
 		{
 			Dispose(true);
+		}
+
+		public Action GetWork() => FillQueue;
+
+		public void StopWork()
+		{
+			_IsStopped = true;
 		}
 
 		class Chunk

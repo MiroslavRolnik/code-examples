@@ -8,6 +8,9 @@ namespace GZipTest
 {
 	internal interface IWorkDoer
 	{
+		int ThreadCount { get; }
 		void DoWork(IWorkProvider workProvider);
+		void Stop();
+		void WaitToEnd();
 	}
 }

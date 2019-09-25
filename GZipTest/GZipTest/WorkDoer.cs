@@ -9,31 +9,32 @@ namespace GZipTest
 {
 	internal class WorkDoer : IWorkDoer
 	{
-		private readonly int _WorkThreadsCount;
+		public int ThreadCount { get; }
 
 		private Thread[] _Threads;
+
+		private IWorkProvider _WorkProvider;
 
 		private volatile Exception _Exception;
 
 		public void DoWork(IWorkProvider workProvider)
 		{
-			_Threads = new Thread[_WorkThreadsCount];
+			if (_WorkProvider != null)
+				throw new InvalidOperationException($"This {nameof(WorkDoer)} has already been initialized, create new instance instead.");
 
-			for (int i = 0; i < _WorkThreadsCount; i++)
+			_WorkProvider = workProvider ?? throw new ArgumentNullException(nameof(workProvider));
+
+			_Threads = new Thread[ThreadCount];
+
+			for (int i = 0; i < ThreadCount; i++)
 			{
-				Thread workThread = new Thread(() => DoWorkOnThread(workProvider));
+				Thread workThread = new Thread(() => DoWorkOnThread(_WorkProvider));
 				workThread.IsBackground = true;
-				workThread.Name = $"WorkDoer#{i}";
+				workThread.Name = $"{nameof(WorkDoer)}#{i}";
 				workThread.Start();
 
 				_Threads[i] = workThread;
 			}
-
-			foreach (var thread in _Threads)
-				thread.Join();
-
-			if (_Exception != null)
-				throw _Exception;
 		}
 
 		private void DoWorkOnThread(IWorkProvider workProvider)
@@ -45,15 +46,36 @@ namespace GZipTest
 			}
 			catch (Exception ex)
 			{
-				Interlocked.CompareExchange<Exception>(ref _Exception, ex, null);
+				Interlocked.CompareExchange(ref _Exception, ex, null);
 
-				workProvider.StopWork();
+				Stop();
 			}
+		}
+
+		public void Stop()
+		{
+			if (_WorkProvider == null)
+				throw new InvalidOperationException($"{nameof(DoWork)} have to be called before work can be stopped");
+
+			_WorkProvider.StopWork();
+		}
+
+		public void WaitToEnd()
+		{
+			if (_WorkProvider == null)
+				throw new InvalidOperationException($"{nameof(DoWork)} have to be called before work can be stopped");
+
+			if (_Threads != null)
+				foreach (var thread in _Threads)
+					thread.Join();
+
+			if (_Exception != null)
+				throw _Exception;
 		}
 
 		public WorkDoer(int workThreadsCount)
 		{
-			_WorkThreadsCount = workThreadsCount;
+			ThreadCount = workThreadsCount;
 		}
 	}
 }
