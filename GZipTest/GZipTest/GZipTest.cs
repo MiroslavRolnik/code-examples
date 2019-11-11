@@ -27,8 +27,8 @@ namespace GZipTest
 		public static void Decompress(Stream inputStream, Stream outputStream, int chunkLength = 1024, int workThreadCount = 5)
 		{
 			CheckArguments(inputStream, outputStream, chunkLength, workThreadCount);
-			
-			using (var chunkReader = new ChunkToDecompressReader(inputStream))// new ChunkQueue(new ChunkToDecompressReader(inputStream),workThreadCount)
+
+			using (var chunkReader = new ChunkQueue(new ChunkToDecompressReader(inputStream), new WorkDoer(workThreadCount), workThreadCount))// new ChunkToDecompressReader(inputStream))// 
 			using (var chunkWriter = new ChunkWriter(outputStream))
 			{
 				IWorkProvider workProvider = new GZipTestDecompress(chunkReader, chunkWriter);

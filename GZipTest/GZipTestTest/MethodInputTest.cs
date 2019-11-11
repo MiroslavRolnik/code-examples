@@ -79,11 +79,15 @@ namespace GZipTestTest
 			if (!FileExists(origFile))
 				CreateTestFile(origFile);
 
-			Assert.AreEqual(1, GZipTest.Program.TestMain(new string[] { "compress", origFile, archFile }));
+			int i = 20;
+			while (i-- > 0)
+			{
+				Assert.AreEqual(1, GZipTest.Program.TestMain(new string[] { "compress", origFile, archFile }));
 
-			Assert.AreEqual(1, GZipTest.Program.TestMain(new string[] { "decompress", archFile, decomFile }));
+				Assert.AreEqual(1, GZipTest.Program.TestMain(new string[] { "decompress", archFile, decomFile }));
 
-			Assert.IsTrue(AreEqual(File.ReadAllBytes(origFile), File.ReadAllBytes(decomFile)));
+				Assert.IsTrue(AreEqual(File.ReadAllBytes(origFile), File.ReadAllBytes(decomFile)));
+			}
 		}
 
 		[TestMethod]
@@ -134,7 +138,7 @@ namespace GZipTestTest
 
 			byte[] file = File.ReadAllBytes(archFile);
 
-			file[0] = (byte)((file[0]+1)%256);
+			file[0] = (byte)((file[0] + 1) % 256);
 
 			File.WriteAllBytes(archFile, file);
 

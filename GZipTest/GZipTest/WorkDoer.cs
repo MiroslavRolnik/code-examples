@@ -30,7 +30,7 @@ namespace GZipTest
 			{
 				Thread workThread = new Thread(() => DoWorkOnThread(_WorkProvider));
 				workThread.IsBackground = true;
-				workThread.Name = $"{nameof(WorkDoer)}#{i}";
+				workThread.Name = $"{workProvider.GetType()}#{i}";
 				workThread.Start();
 
 				_Threads[i] = workThread;
