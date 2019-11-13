@@ -6,3 +6,5 @@ v15
 /GZipTest/packages
 /GZipTest/TestResults
 
+/GZipTest/IndexOrder/bin/Debug
+/GZipTest/IndexOrder/obj/Debug
