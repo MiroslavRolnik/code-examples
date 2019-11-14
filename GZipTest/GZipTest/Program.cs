@@ -33,7 +33,7 @@ namespace GZipTest
 		{
 			AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-			int threadCount = 2 * Environment.ProcessorCount;
+			int threadCount = Environment.ProcessorCount;
 			int chunkLength;
 			CompressionMode compressionMode;
 			string inputFileName;
@@ -58,7 +58,7 @@ namespace GZipTest
 			}
 			catch (OutOfMemoryException ex)
 			{
-				throw new Exception("System does not have sufficient memmory. Try to set up with additional parameters [chunkLengt] and [threadCount].");
+				throw new Exception("System does not have sufficient memmory. Try to set up with additional parameters [chunkLengt] and [threadCount].", ex);
 			}
 			finally
 			{

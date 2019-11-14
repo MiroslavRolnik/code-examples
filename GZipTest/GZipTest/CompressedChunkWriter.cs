@@ -14,13 +14,16 @@ namespace GZipTest
 
 		protected override void WriteBody(byte[] buffer, int offset, int count, int chunkIndex)
 		{
-			InnerStream.Write(BitConverter.GetBytes(count), 0, 4);
+			lock (InnerStream)
+			{
+				InnerStream.Write(BitConverter.GetBytes(count), 0, 4);
 
-			byte[] hash = hashAlgorithm.ComputeHash(buffer, offset, count);
+				byte[] hash = hashAlgorithm.ComputeHash(buffer, offset, count);
 
-			InnerStream.Write(hash, 0, hash.Length);
+				InnerStream.Write(hash, 0, hash.Length);
 
-			base.WriteBody(buffer, offset, count, chunkIndex);
+				base.WriteBody(buffer, offset, count, chunkIndex);
+			}
 		}
 
 		public ComressedChunkWriter(Stream stream) : base(stream)

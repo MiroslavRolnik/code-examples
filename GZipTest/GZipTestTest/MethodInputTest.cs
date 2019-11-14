@@ -62,7 +62,7 @@ namespace GZipTestTest
 			string origFile = nameof(TestCompress) + ".orig";
 			string archFile = nameof(TestCompress) + ".arch";
 
-			if (!FileExists(origFile))
+			//if (!FileExists(origFile))
 				CreateTestFile(origFile);
 
 			Assert.AreEqual(1, GZipTest.Program.TestMain(new string[] { "compress", origFile, archFile }));
@@ -76,7 +76,7 @@ namespace GZipTestTest
 			string archFile = nameof(TestDecompress) + ".arch";
 			string decomFile = "_" + origFile;
 
-			if (!FileExists(origFile))
+			//if (!FileExists(origFile))
 				CreateTestFile(origFile);
 
 			int i = 20;
@@ -97,7 +97,7 @@ namespace GZipTestTest
 			string archFile = nameof(TestInputFileAlreadyOpen) + ".arch";
 			string decomFile = "_" + origFile;
 
-			if (!FileExists(origFile))
+			//if (!FileExists(origFile))
 				CreateTestFile(origFile);
 
 			Stream file = new FileStream(origFile, FileMode.Open, FileAccess.Read, FileShare.None, 1024, false);
@@ -113,7 +113,7 @@ namespace GZipTestTest
 			string archFile = nameof(TestOutputFileAlreadyOpen) + ".arch";
 			string decomFile = "_" + origFile;
 
-			if (!FileExists(origFile))
+			//if (!FileExists(origFile))
 				CreateTestFile(origFile);
 
 			Assert.AreEqual(1, GZipTest.Program.TestMain(new string[] { "compress", origFile, archFile }));
@@ -131,7 +131,7 @@ namespace GZipTestTest
 			string archFile = nameof(TestDataError) + ".arch";
 			string decomFile = "_" + origFile;
 
-			if (!FileExists(origFile))
+			//if (!FileExists(origFile))
 				CreateTestFile(origFile);
 
 			Assert.AreEqual(1, GZipTest.Program.TestMain(new string[] { "compress", origFile, archFile }));
@@ -166,11 +166,13 @@ namespace GZipTestTest
 
 		void CreateTestFile(string fileName)
 		{
+			Random random = new Random();
+
 			using (FileStream stream = new FileStream(fileName, FileMode.Create, FileAccess.Write))
 			using (StreamWriter writer = new StreamWriter(stream))
 			{
 				for (int i = 0; i < 1_000_000; i++)
-					writer.WriteLine(string.Format("{0:D6}{1}", i, new string('A', 20)));
+					writer.WriteLine(string.Format("{0:D6}{1}", i, new string('A', random.Next(10,20))));
 			}
 		}
 

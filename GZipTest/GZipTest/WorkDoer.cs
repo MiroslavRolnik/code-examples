@@ -26,11 +26,12 @@ namespace GZipTest
 
 			_Threads = new Thread[ThreadCount];
 
+			string providerType = workProvider.GetType().ToString();
 			for (int i = 0; i < ThreadCount; i++)
 			{
 				Thread workThread = new Thread(() => DoWorkOnThread(_WorkProvider));
 				workThread.IsBackground = true;
-				workThread.Name = $"{workProvider.GetType()}#{i}";
+				workThread.Name = $"{providerType}#{i}";
 				workThread.Start();
 
 				_Threads[i] = workThread;

@@ -23,7 +23,7 @@ namespace GZipTest
 		private volatile bool _IsException;
 
 		private volatile int _ChunkCountInProgress;
-		private int[] _ChunkIndexInProgress;
+		private int[] _ChunkInProgressIndices;
 		private volatile int _ThreadIndex = -1;
 		private volatile int _ChunkCountEnqueued;
 
@@ -49,13 +49,12 @@ namespace GZipTest
 					{
 						Chunk chunk = _ChunkQueue.Dequeue();
 
-						length = chunk.Length;
-
 						if (chunk.Exception != null)
 							throw chunk.Exception;
 
 						buffer = chunk.Buffer;
 						chunkIndex = chunk.Index;
+						length = chunk.Length;
 
 						_WaitForRemoveEvent.Set();
 					}
@@ -71,15 +70,12 @@ namespace GZipTest
 
 		private void FillQueue()
 		{
-			int read;
-			byte[] buffer;
-			int chunkIndex;
-			Exception exception;
-			bool isEnd = false;
 			int threadIndex = Interlocked.Increment(ref _ThreadIndex);
-			_ChunkIndexInProgress[threadIndex] = int.MaxValue;
 
-			while (!isEnd && !_IsStopped && !_IsException)
+			_ChunkInProgressIndices[threadIndex] = int.MaxValue;
+
+			Chunk chunk;
+			while (!_IsStopped && !_IsException)
 			{
 				Interlocked.Increment(ref _ChunkCountInProgress);
 
@@ -89,57 +85,79 @@ namespace GZipTest
 					{
 						if (!_IsException)
 						{
-							try
-							{
-								read = ChunkReader.ReadChunk(out buffer, out chunkIndex);
-								_ChunkIndexInProgress[threadIndex] = (chunkIndex < 0) ? int.MaxValue : chunkIndex;
-								exception = null;
-							}
-							catch (Exception ex)
-							{
+							chunk = ReadChunkFromReader();
+
+							if (chunk.Exception != null)
 								_IsException = true;
-								exception = ex;
-								buffer = null;
-								chunkIndex = -1;
-								read = 1;
-							}
+							else
+								_ChunkInProgressIndices[threadIndex] = (chunk.Index < 0) ? int.MaxValue : chunk.Index;
 						}
 						else
 							break;
 					}
 
-					isEnd = (read == 0) || (exception != null);
-
-					if (read > 0)
+					if (chunk.Length > 0)
 					{
-						while (true)
-						{
-							_WaitForRemoveEvent.Wait(500);
-
-							lock (_ChunkQueue)
-							{
-								int minIndex = _ChunkIndexInProgress.Min();
-
-								if ((minIndex == _ChunkCountEnqueued + 1 - _WorkDoer.ThreadCount && chunkIndex == minIndex)
-									|| (minIndex > _ChunkCountEnqueued + 1 - _WorkDoer.ThreadCount && _ChunkCountEnqueued < chunkIndex + _WorkDoer.ThreadCount && _ChunkCountEnqueued > chunkIndex - _WorkDoer.ThreadCount))
-								{
-									_ChunkQueue.Enqueue(new Chunk() { Buffer = buffer, Index = chunkIndex, Length = read, Exception = exception });
-									_ChunkCountEnqueued++;
-									_WaitForAddEvent.Set();
-									break;
-								}
-								else
-								{
-									_WaitForRemoveEvent.Reset();
-									continue;
-								}
-							}
-						}
+						AddChunkToQueue(chunk);
 					}
+
+					if ((chunk.Length == 0) || (chunk.Exception != null))
+						break;
 				}
 				finally
 				{
 					Interlocked.Decrement(ref _ChunkCountInProgress);
+				}
+			}
+		}
+
+		private Chunk ReadChunkFromReader()
+		{
+			int read = 1;//if exception occur add chunk to queue to rethrow it
+			byte[] buffer = null;
+			int chunkIndex = -1;
+			Exception exception = null;
+
+			try
+			{
+				read = ChunkReader.ReadChunk(out buffer, out chunkIndex);
+			}
+			catch (Exception ex)
+			{
+				exception = ex;
+			}
+			return new Chunk()
+			{
+				Buffer = buffer,
+				Exception = exception,
+				Index = chunkIndex,
+				Length = read
+			};
+		}
+
+		private void AddChunkToQueue(Chunk chunk)
+		{
+			while (true)
+			{
+				_WaitForRemoveEvent.Wait(500);
+
+				lock (_ChunkQueue)
+				{
+					int minIndex = _ChunkInProgressIndices.Min();
+
+					if ((minIndex == _ChunkCountEnqueued + 1 - _WorkDoer.ThreadCount && chunk.Index == minIndex)
+						|| (minIndex > _ChunkCountEnqueued + 1 - _WorkDoer.ThreadCount && _ChunkCountEnqueued < chunk.Index + _WorkDoer.ThreadCount && _ChunkCountEnqueued > chunk.Index - _WorkDoer.ThreadCount))
+					{
+						_ChunkQueue.Enqueue(chunk);
+						_ChunkCountEnqueued++;
+						_WaitForAddEvent.Set();
+						break;
+					}
+					else
+					{
+						_WaitForRemoveEvent.Reset();
+						continue;
+					}
 				}
 			}
 		}
@@ -151,7 +169,7 @@ namespace GZipTest
 			ChunkReader = chunkReader;
 			_WaitForAddEvent = new ManualResetEventSlim(false);
 			_WaitForRemoveEvent = new ManualResetEventSlim(true);
-			_ChunkIndexInProgress = new int[workDoer.ThreadCount];
+			_ChunkInProgressIndices = new int[workDoer.ThreadCount];
 		}
 
 		private bool disposedValue = false;
@@ -188,7 +206,7 @@ namespace GZipTest
 			Dispose(true);
 		}
 
-		struct Chunk
+		class Chunk
 		{
 			public byte[] Buffer;
 			public int Index;

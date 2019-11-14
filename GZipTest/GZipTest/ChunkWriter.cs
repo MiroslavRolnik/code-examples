@@ -41,7 +41,8 @@ namespace GZipTest
 
 		protected virtual void WriteBody(byte[] buffer, int offset, int count, int chunkIndex)
 		{
-			InnerStream.Write(buffer, offset, count);
+			lock(InnerStream)
+				InnerStream.Write(buffer, offset, count);
 		}
 
 		public ChunkWriter(Stream stream):base(stream)

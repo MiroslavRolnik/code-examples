@@ -36,7 +36,7 @@ namespace GZipTest
 					byte[] hash = hashAlgorithm.ComputeHash(buffer);
 
 					if (read != chunkLength || !hash.IsEqual(headerBuffer, 4))
-						throw new Exception($"Hash code error in chunk {chunkIndex}!");
+						throw new Exception($"Hash code error in chunk {chunkIndex}! The data are corrupted.");
 
 					return read;
 				}
