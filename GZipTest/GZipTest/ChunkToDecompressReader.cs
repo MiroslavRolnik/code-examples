@@ -23,7 +23,7 @@ namespace GZipTest
 
 				byte[] headerBuffer = new byte[headerLength];
 				
-				int readLength = InnerStream.Read(headerBuffer, 0, headerLength);
+				int readLength = Read(headerBuffer, 0, headerLength);
 
 				if (readLength == headerLength)
 				{
@@ -31,7 +31,7 @@ namespace GZipTest
 
 					buffer = new byte[chunkLength];
 
-					int read = Read(buffer, 0, chunkLength, out chunkIndex);
+					int read = ReadChunk(buffer, 0, chunkLength, out chunkIndex);
 
 					byte[] hash = hashAlgorithm.ComputeHash(buffer);
 

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace GZipTest
 {
-	internal class ChunkQueue : IChunkReader, IWorkProvider
+	internal class ChunkReaderQueue : IChunkReader, IWorkProvider
 	{
 		private readonly int _QueueLength;
 		private IWorkDoer _WorkDoer;
@@ -162,7 +162,7 @@ namespace GZipTest
 			}
 		}
 
-		public ChunkQueue(IChunkReader chunkReader, IWorkDoer workDoer, int queueLength)
+		public ChunkReaderQueue(IChunkReader chunkReader, IWorkDoer workDoer, int queueLength)
 		{
 			_WorkDoer = workDoer;
 			_QueueLength = queueLength;

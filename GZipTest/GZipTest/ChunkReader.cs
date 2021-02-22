@@ -9,12 +9,20 @@ namespace GZipTest
 {
 	internal abstract class ChunkReaderBase : ChunkStreamBase, IDisposable
 	{
-		public int Read(byte[] buffer, int offset, int count, out int chunkIndex)
+		public int ReadChunk(byte[] buffer, int offset, int count, out int chunkIndex)
 		{
 			lock (InnerStream)
 			{
 				chunkIndex = _ChunkIndex++;
 
+				return Read(buffer, offset, count);
+			}
+		}
+
+		public int Read(byte[] buffer, int offset, int count)
+		{
+			lock (InnerStream)
+			{
 				int read = 0;
 
 				int readLength;

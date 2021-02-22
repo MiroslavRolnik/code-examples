@@ -41,7 +41,7 @@ namespace GZipTest
 					decompressed = ws.ToArray();
 				}
 
-				_ChunkWriter.Write(decompressed, 0, decompressed.Length, chunkIndex);
+				_ChunkWriter.WriteChunk(decompressed, 0, decompressed.Length, chunkIndex);
 			}
 		}
 

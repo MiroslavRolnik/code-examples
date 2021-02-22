@@ -13,7 +13,7 @@ namespace GZipTest
 	{
 		private ManualResetEventSlim EventSlim = new ManualResetEventSlim();
 
-		public void Write(byte[] buffer, int offset, int count, int chunkIndex)
+		public void WriteChunk(byte[] buffer, int offset, int count, int chunkIndex)
 		{
 			while (true)
 			{

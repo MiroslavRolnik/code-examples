@@ -17,7 +17,7 @@ namespace GZipTest
 			{
 				buffer = new byte[_ChunkLength];
 
-				return Read(buffer, 0, _ChunkLength, out chunkIndex);
+				return ReadChunk(buffer, 0, _ChunkLength, out chunkIndex);
 			}
 		}
 

@@ -53,7 +53,7 @@ namespace IndexOrder
 
 		private static List<int> CreateBuffer(int length)
 		{
-			List<int> bufferArray = new List<int>();			
+			List<int> bufferArray = new List<int>();
 
 			for (int i = 0; i < length; i++)
 				bufferArray.Add(i);

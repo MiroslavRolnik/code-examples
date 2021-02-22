@@ -44,8 +44,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ByteArrayExtension.cs" />
-    <Compile Include="ChunkBase.cs" />
-    <Compile Include="ChunkQueue.cs" />
+    <Compile Include="ChunkStreamBase.cs" />
+    <Compile Include="ChunkReaderQueue.cs" />
     <Compile Include="ChunkReader.cs" />
     <Compile Include="ChunkToDecompressReader.cs" />
     <Compile Include="ChunkToCompressReader.cs" />
